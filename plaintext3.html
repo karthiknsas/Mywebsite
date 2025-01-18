@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REST API Call with Log Output and Send Email</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Environment Checkboxes */
+        .checkboxes {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .checkboxes label {
+            margin: 0 20px;
+        }
+
+        /* Content Section (Textarea) */
+        .content-section {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+            color: #555;
+            display: flex;
+            justify-content: center;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            resize: both;
+            overflow: auto; /* This enables both vertical and horizontal scrolling */
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            white-space: nowrap; /* Keeps formatting for newlines and spaces */
+        }
+
+        .api-btn, .send-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .api-btn:hover, .send-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .log-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f1f1f1;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 12px;
+            color: white;
+            font-size: 16px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status-message.success {
+            background-color: #2ecc71;
+        }
+
+        .status-message.error {
+            background-color: #e74c3c;
+        }
+
+        /* Email Input */
+        .email-input {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .email-input input {
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <Center><h3>REST API Call with Log Output and Send Email</h3><center>
+
+        <!-- Environment checkboxes -->
+        <div class="checkboxes">
+            <label><input type="checkbox" id="test-checkbox"> Test</label>
+            <label><input type="checkbox" id="stage-checkbox"> Stage</label>
+            <label><input type="checkbox" id="prod-checkbox"> Prod</label>
+        </div>
+
+        <!-- Scrollable Textarea Section -->
+        <div class="content-section">
+            <textarea id="content-textarea" rows="10" cols="50">
+            </textarea>
+        </div>
+
+        <!-- Button to trigger API call -->
+        <button class="api-btn" id="api-call-btn">Make API Call</button>
+
+        <!-- Status message -->
+        <div class="status-message" id="status-message"></div>
+
+        <!-- Log Section -->
+        <div class="log-section" id="log-section">
+            <h3>Log Output:</h3>
+            <pre id="log-content">Logs will appear here...</pre>
+        </div>
+
+        <!-- Email Input Section -->
+        <div class="email-input">
+            <input type="email" id="email" placeholder="Enter email to send log" required>
+            <button class="send-btn" id="send-log-btn">Send Log</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <script>
+        // Initialize EmailJS with your public API key
+        emailjs.init('your_user_id'); // Replace 'your_user_id' with your EmailJS User ID
+
+        // Function to append logs to the log section
+        function logMessage(message, isSuccess = true) {
+            const logContent = document.getElementById("log-content");
+            const logLine = document.createElement("div");
+            logLine.textContent = message;
+            logLine.style.color = isSuccess ? 'green' : 'red';
+            logContent.appendChild(logLine);
+            logContent.scrollTop = logContent.scrollHeight; // Scroll to the bottom
+        }
+
+        // API Call on button click
+        document.getElementById("api-call-btn").addEventListener("click", function() {
+            const statusMessage = document.getElementById("status-message");
+            const content = document.getElementById("content-textarea");
+
+            // Clear previous status message and logs
+            statusMessage.style.display = "none";
+            statusMessage.textContent = '';
+            logMessage("Making API call...", true);
+
+            // Simulate a loading state
+            statusMessage.textContent = "Fetching data from the API...";
+            statusMessage.className = "status-message";
+            statusMessage.style.display = "block";
+
+            // Make the API call (using Fetch API for this example)
+            fetch('https://jsonplaceholder.typicode.com/posts/1')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Log the successful API call
+                    logMessage("API call successful: " + data.title, true);
+
+                    // On successful response, update the content
+                    content.innerHTML = `<h3>${data.title}</h3><p>${data.body}</p>`;
+                    statusMessage.textContent = "API call was successful!";
+                    statusMessage.className = "status-message success";
+                })
+                .catch(error => {
+                    // Log the error
+                    logMessage("API call failed: " + error.message, false);
+
+                    // On error, show the error message
+                    statusMessage.textContent = "Error fetching data. Please try again.";
+                    statusMessage.className = "status-message error";
+                });
+        });
+		
+		window.onload = function() {
+			var textarea = document.querySelector('textarea');
+			textarea.setSelectionRange(0, 0); // Sets the cursor at the start (position 0)
+			textarea.focus(); // Ensures the textarea is focused
+		};
+		
+		
+        // Send log as email on button click
+        document.getElementById("send-log-btn").addEventListener("click", function() {
+            const email = document.getElementById("email").value;
+            const logs = document.getElementById("log-content").innerText;
+
+            if (!email) {
+                alert("Please enter a valid email address.");
+                return;
+            }
+
+            // Prepare the email content
+            const emailParams = {
+                to_email: email,
+                message: logs,
+                subject: "Log File from Developer Portal"
+            };
+
+            // Send the email using EmailJS
+            emailjs.send('your_service_id', 'your_template_id', emailParams) // Replace with your actual service and template IDs
+                .then(function(response) {
+                    logMessage("Log sent to email successfully!", true);
+                }, function(error) {
+                    logMessage("Failed to send log email: " + error.text, false);
+                });
+        });
+
+    </script>
+
+</body>
+</html>
